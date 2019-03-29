@@ -65,7 +65,6 @@ namespace ASCOM.Baader
         /// The DeviceID is used by ASCOM applications to load the driver at runtime.
         /// </summary>
         internal static string driverID = "ASCOM.Baader.Dome";
-        // TODO Change the descriptive string for your driver then remove this line
         /// <summary>
         /// Driver description that displays in the ASCOM Chooser.
         /// </summary>
@@ -110,7 +109,6 @@ namespace ASCOM.Baader
             serialPort = null; // Initialise without connection
             utilities = new Util(); //Initialise util object
             astroUtilities = new AstroUtils(); // Initialise astro utilities object
-            //TODO: Implement your additional construction here
 
             tl.LogMessage("Dome", "Completed initialisation");
         }
@@ -236,7 +234,6 @@ namespace ASCOM.Baader
 
         public string Description
         {
-            // TODO customise this device description
             get
             {
                 tl.LogMessage("Description Get", driverDescription);
@@ -249,7 +246,6 @@ namespace ASCOM.Baader
             get
             {
                 Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
-                // TODO customise this driver description
                 string driverInfo = "Baader Dome Driver. Version: " + String.Format(CultureInfo.InvariantCulture, "{0}.{1}", version.Major, version.Minor);
                 tl.LogMessage("DriverInfo Get", driverInfo);
                 return driverInfo;
@@ -303,7 +299,6 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("Altitude Get", "Not implemented");
                 throw new ASCOM.PropertyNotImplementedException("Altitude", false);
             }
         }
@@ -330,8 +325,9 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("Azimuth Get", "Not implemented");
-                throw new ASCOM.PropertyNotImplementedException("Azimuth", false);
+                // azimuth command is d#getazim, return is of the form d#azi0010 with tens of degrees
+                string ret = CommandString("d#getazim", true);
+                return float.Parse(ret.Substring(5) / 10.;
             }
         }
 
@@ -357,7 +353,6 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSetAltitude Get", false.ToString());
                 return false;
             }
         }
@@ -366,8 +361,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSetAzimuth Get", false.ToString());
-                return false;
+                return true;
             }
         }
 
@@ -471,14 +465,14 @@ namespace ASCOM.Baader
 
         public void SlewToAltitude(double Altitude)
         {
-            tl.LogMessage("SlewToAltitude", "Not implemented");
             throw new ASCOM.MethodNotImplementedException("SlewToAltitude");
         }
 
         public void SlewToAzimuth(double Azimuth)
         {
-            tl.LogMessage("SlewToAzimuth", "Not implemented");
-            throw new ASCOM.MethodNotImplementedException("SlewToAzimuth");
+            // position command is d#azi0000 with tens of degrees, returns d#gotmess
+            string cmd = string.Format("d#azi{0:D4}", Azimuth);
+            CommandString(cmd, true);
         }
 
         public bool Slewing

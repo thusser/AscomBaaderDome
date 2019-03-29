@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.539
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ascom_baader_dome", "ascom_baader_dome\ascom_baader_dome.csproj", "{64308775-BD4A-469C-BCAB-3ED830B811AF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AscomBaaderDome", "AscomBaaderDome\AscomBaaderDome.csproj", "{64308775-BD4A-469C-BCAB-3ED830B811AF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "test", "test\test.csproj", "{D5207217-61C7-4E94-8097-91DBACE57D2A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DriverTest", "DriverTest\DriverTest.csproj", "{D5207217-61C7-4E94-8097-91DBACE57D2A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
