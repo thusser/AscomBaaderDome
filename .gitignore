@@ -259,3 +259,5 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/ascom_baader_dome/BaaderDome Setup.exe
+/ascom_baader_dome/BaaderDome Test.js
