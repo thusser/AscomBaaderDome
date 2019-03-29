@@ -73,15 +73,8 @@ namespace ASCOM.Baader
 
         internal static string comPortProfileName = "COM Port"; // Constants used for Profile persistence
         internal static string comPortDefault = "COM1";
-        internal static string traceStateProfileName = "Trace Level";
-        internal static string traceStateDefault = "false";
 
         internal static string comPort; // Variables to hold the currrent device configuration
-
-        /// <summary>
-        /// Private variable to hold the connected state
-        /// </summary>
-        private bool connectedState;
 
         /// <summary>
         /// Private variable to hold an ASCOM Utilities object
@@ -99,6 +92,11 @@ namespace ASCOM.Baader
         internal static TraceLogger tl;
 
         /// <summary>
+        /// Variable to hold a reference to the serial port.
+        /// </summary>
+        private Serial serialPort;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Baader"/> class.
         /// Must be public for COM registration.
         /// </summary>
@@ -109,7 +107,7 @@ namespace ASCOM.Baader
 
             tl.LogMessage("Dome", "Starting initialisation");
 
-            connectedState = false; // Initialise connected to false
+            serialPort = null; // Initialise without connection
             utilities = new Util(); //Initialise util object
             astroUtilities = new AstroUtils(); // Initialise astro utilities object
             //TODO: Implement your additional construction here
@@ -165,31 +163,23 @@ namespace ASCOM.Baader
         public void CommandBlind(string command, bool raw)
         {
             CheckConnected("CommandBlind");
-            // Call CommandString and return as soon as it finishes
-            this.CommandString(command, raw);
-            // or
             throw new ASCOM.MethodNotImplementedException("CommandBlind");
-            // DO NOT have both these sections!  One or the other
         }
 
         public bool CommandBool(string command, bool raw)
         {
             CheckConnected("CommandBool");
-            string ret = CommandString(command, raw);
-            // TODO decode the return string and return true or false
-            // or
             throw new ASCOM.MethodNotImplementedException("CommandBool");
-            // DO NOT have both these sections!  One or the other
         }
 
         public string CommandString(string command, bool raw)
         {
             CheckConnected("CommandString");
-            // it's a good idea to put all the low level communication with the device here,
-            // then all communication calls this function
-            // you need something to ensure that only one command is in progress at a time
 
-            throw new ASCOM.MethodNotImplementedException("CommandString");
+            // send command and receive reply
+            serialPort.ClearBuffers();
+            serialPort.Transmit(command);
+            return serialPort.ReceiveTerminated("\n");
         }
 
         public void Dispose()
@@ -219,15 +209,27 @@ namespace ASCOM.Baader
 
                 if (value)
                 {
-                    connectedState = true;
+                    // connect
                     LogMessage("Connected Set", "Connecting to port {0}", comPort);
-                    // TODO connect to the device
+                    try
+                    {
+                        serialPort = new Serial();
+                        serialPort.PortName = comPort;
+                        serialPort.Speed = SerialSpeed.ps9600;
+                        serialPort.Connected = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        // report error
+                        throw new ASCOM.NotConnectedException("Serial port connection error.", ex);
+                    }
                 }
                 else
                 {
-                    connectedState = false;
+                    // disconnect
                     LogMessage("Connected Set", "Disconnecting from port {0}", comPort);
-                    // TODO disconnect from the device
+                    if (serialPort != null && serialPort.Connected)
+                        serialPort.Connected = false;
                 }
             }
         }
@@ -248,7 +250,7 @@ namespace ASCOM.Baader
             {
                 Version version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
                 // TODO customise this driver description
-                string driverInfo = "Information about the driver itself. Version: " + String.Format(CultureInfo.InvariantCulture, "{0}.{1}", version.Major, version.Minor);
+                string driverInfo = "Baader Dome Driver. Version: " + String.Format(CultureInfo.InvariantCulture, "{0}.{1}", version.Major, version.Minor);
                 tl.LogMessage("DriverInfo Get", driverInfo);
                 return driverInfo;
             }
@@ -279,7 +281,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                string name = "Short driver name - please customise";
+                string name = "BaaderDome";
                 tl.LogMessage("Name Get", name);
                 return name;
             }
@@ -581,8 +583,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                // TODO check that the driver hardware connection exists and is connected to the hardware
-                return connectedState;
+                return serialPort == null ? false : serialPort.Connected;
             }
         }
 
@@ -606,7 +607,6 @@ namespace ASCOM.Baader
             using (Profile driverProfile = new Profile())
             {
                 driverProfile.DeviceType = "Dome";
-                tl.Enabled = Convert.ToBoolean(driverProfile.GetValue(driverID, traceStateProfileName, string.Empty, traceStateDefault));
                 comPort = driverProfile.GetValue(driverID, comPortProfileName, string.Empty, comPortDefault);
             }
         }
@@ -619,7 +619,6 @@ namespace ASCOM.Baader
             using (Profile driverProfile = new Profile())
             {
                 driverProfile.DeviceType = "Dome";
-                driverProfile.WriteValue(driverID, traceStateProfileName, tl.Enabled.ToString());
                 driverProfile.WriteValue(driverID, comPortProfileName, comPort.ToString());
             }
         }
