@@ -95,6 +95,10 @@ namespace ASCOM.Baader
         /// </summary>
         private Serial serialPort;
 
+        private ShutterState domeShutterState = ShutterState.shutterClosed;
+
+        private double domeAzimuthDestination = null;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Baader"/> class.
         /// Must be public for COM registration.
@@ -177,7 +181,7 @@ namespace ASCOM.Baader
             // send command and receive reply
             serialPort.ClearBuffers();
             serialPort.Transmit(command);
-            return serialPort.ReceiveTerminated("\n");
+            return serialPort.ReceiveCounted(9);
         }
 
         public void Dispose()
@@ -287,11 +291,9 @@ namespace ASCOM.Baader
 
         #region IDome Implementation
 
-        private bool domeShutterState = false; // Variable to hold the open/closed status of the shutter, true = Open
-
         public void AbortSlew()
         {
-            // This is a mandatory parameter but we have no action to take in this simple driver
+            // Cannot abort slew
             tl.LogMessage("AbortSlew", "Completed");
         }
 
@@ -299,6 +301,7 @@ namespace ASCOM.Baader
         {
             get
             {
+                // Don't have an Altitude
                 throw new ASCOM.PropertyNotImplementedException("Altitude", false);
             }
         }
@@ -307,6 +310,7 @@ namespace ASCOM.Baader
         {
             get
             {
+                // Not implemented yet
                 tl.LogMessage("AtHome Get", "Not implemented");
                 throw new ASCOM.PropertyNotImplementedException("AtHome", false);
             }
@@ -316,6 +320,7 @@ namespace ASCOM.Baader
         {
             get
             {
+                // Not implemented yet
                 tl.LogMessage("AtPark Get", "Not implemented");
                 throw new ASCOM.PropertyNotImplementedException("AtPark", false);
             }
@@ -327,7 +332,7 @@ namespace ASCOM.Baader
             {
                 // azimuth command is d#getazim, return is of the form d#azi0010 with tens of degrees
                 string ret = CommandString("d#getazim", true);
-                return float.Parse(ret.Substring(5) / 10.;
+                return double.Parse(ret.Substring(5)) / 10;
             }
         }
 
@@ -335,7 +340,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanFindHome Get", false.ToString());
+                // Not implemented yet
                 return false;
             }
         }
@@ -344,7 +349,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanPark Get", false.ToString());
+                // Not implemented yet
                 return false;
             }
         }
@@ -353,6 +358,7 @@ namespace ASCOM.Baader
         {
             get
             {
+                // Cannot set Altitude
                 return false;
             }
         }
@@ -361,6 +367,7 @@ namespace ASCOM.Baader
         {
             get
             {
+                // Can set azimuth
                 return true;
             }
         }
@@ -369,7 +376,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSetPark Get", false.ToString());
+                // Not implemented yet
                 return false;
             }
         }
@@ -378,7 +385,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSetShutter Get", true.ToString());
+                // Driver can move shutter
                 return true;
             }
         }
@@ -387,7 +394,7 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSlave Get", false.ToString());
+                // Not implemented yet
                 return false;
             }
         }
@@ -396,38 +403,40 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("CanSyncAzimuth Get", false.ToString());
+                // Not implemented yet
                 return false;
             }
         }
 
         public void CloseShutter()
         {
-            tl.LogMessage("CloseShutter", "Shutter has been closed");
-            domeShutterState = false;
+            // Close the shutter and remember that we're closing
+            CommandString("d#closhut", true);
+            domeShutterState = ShutterState.shutterClosing;
         }
 
         public void FindHome()
         {
-            tl.LogMessage("FindHome", "Not implemented");
+            // Not implemented yet
             throw new ASCOM.MethodNotImplementedException("FindHome");
         }
 
         public void OpenShutter()
         {
-            tl.LogMessage("OpenShutter", "Shutter has been opened");
-            domeShutterState = true;
+            // Open the shutter and remember that we're opening
+            CommandString("d#opeshut", true);
+            domeShutterState = ShutterState.shutterOpening;
         }
 
         public void Park()
         {
-            tl.LogMessage("Park", "Not implemented");
+            // Not implemented yet
             throw new ASCOM.MethodNotImplementedException("Park");
         }
 
         public void SetPark()
         {
-            tl.LogMessage("SetPark", "Not implemented");
+            // Not implemented yet
             throw new ASCOM.MethodNotImplementedException("SetPark");
         }
 
@@ -435,17 +444,19 @@ namespace ASCOM.Baader
         {
             get
             {
-                tl.LogMessage("ShutterStatus Get", false.ToString());
-                if (domeShutterState)
-                {
-                    tl.LogMessage("ShutterStatus", ShutterState.shutterOpen.ToString());
-                    return ShutterState.shutterOpen;
-                }
-                else
-                {
-                    tl.LogMessage("ShutterStatus", ShutterState.shutterClosed.ToString());
+                // get shutter state
+                // on open/closed, we return status directly
+                // on moving, we return the variable set on OpenShutter/CloseShutter
+                // otherwise we return error
+                string ret = CommandString("d#getshut", true);
+                if (ret == "d#shutclo") 
                     return ShutterState.shutterClosed;
-                }
+                else if (ret == "d#shutope")
+                    return ShutterState.shutterOpen;
+                else if (ret == "d#shutrun")
+                    return domeShutterState;
+                else
+                    return ShutterState.shutterError;
             }
         }
 
@@ -465,28 +476,33 @@ namespace ASCOM.Baader
 
         public void SlewToAltitude(double Altitude)
         {
+            // Canot slew to altitude
             throw new ASCOM.MethodNotImplementedException("SlewToAltitude");
         }
 
         public void SlewToAzimuth(double Azimuth)
         {
             // position command is d#azi0000 with tens of degrees, returns d#gotmess
-            string cmd = string.Format("d#azi{0:D4}", Azimuth);
+            int az = (int)(Azimuth * 10);
+            string cmd = string.Format("d#azi{0:D4}", az);
             CommandString(cmd, true);
+
+            // remember ste position
+            domeAzimuthDestination = Azimuth;
         }
 
         public bool Slewing
         {
             get
             {
-                tl.LogMessage("Slewing Get", false.ToString());
-                return false;
+                // we're slewing, if current Azimuth is more than 5 degrees of the destination azimuth
+                return  Math.Abs(Azimuth - domeAzimuthDestination) > 5;
             }
         }
 
         public void SyncToAzimuth(double Azimuth)
         {
-            tl.LogMessage("SyncToAzimuth", "Not implemented");
+            // Not implemented yet
             throw new ASCOM.MethodNotImplementedException("SyncToAzimuth");
         }
 
