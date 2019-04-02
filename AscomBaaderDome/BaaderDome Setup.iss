@@ -34,9 +34,9 @@ Name: "{cf}\ASCOM\Uninstall\Dome\BaaderDome"
 ; TODO: Add subfolders below {app} as needed (e.g. Name: "{app}\MyFolder")
 
 [Files]
-Source: "C:\Users\husser\source\repos\ascom_baader_dome\ascom_baader_dome\bin\Release\ASCOM.Baader.Dome.dll"; DestDir: "{app}"
+Source: "C:\Users\husser\source\repos\thusser\AscomBaaderDome\AscomBaaderDome\bin\Release\ASCOM.Baader.Dome.dll"; DestDir: "{app}"
 ; Require a read-me HTML to appear after installation, maybe driver's Help doc
-Source: "C:\Users\husser\source\repos\ascom_baader_dome\ascom_baader_dome\ReadMe.htm"; DestDir: "{app}"; Flags: isreadme
+Source: "C:\Users\husser\source\repos\thusser\AscomBaaderDome\ReadMe.md"; DestDir: "{app}"; Flags: isreadme
 ; TODO: Add other files needed by your driver here (add subfolders above)
 
 
