@@ -97,7 +97,7 @@ namespace ASCOM.Baader
 
         private ShutterState domeShutterState = ShutterState.shutterClosed;
 
-        private double domeAzimuthDestination = null;
+        private double domeAzimuthDestination = double.NegativeInfinity;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Baader"/> class.
@@ -496,7 +496,10 @@ namespace ASCOM.Baader
             get
             {
                 // we're slewing, if current Azimuth is more than 5 degrees of the destination azimuth
-                return  Math.Abs(Azimuth - domeAzimuthDestination) > 5;
+                if (domeAzimuthDestination == double.NegativeInfinity)
+                    return false;
+                else
+                    return  Math.Abs(Azimuth - domeAzimuthDestination) > 5;
             }
         }
 
