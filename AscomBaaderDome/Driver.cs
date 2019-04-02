@@ -293,8 +293,8 @@ namespace ASCOM.Baader
 
         public void AbortSlew()
         {
-            // Cannot abort slew
-            tl.LogMessage("AbortSlew", "Completed");
+            // Cannot abort slew, but we can fetch current azimuth and slew there
+            SlewToAzimuth(Azimuth);
         }
 
         public double Altitude
@@ -487,7 +487,7 @@ namespace ASCOM.Baader
             string cmd = string.Format("d#azi{0:D4}", az);
             CommandString(cmd, true);
 
-            // remember ste position
+            // remember the position
             domeAzimuthDestination = Azimuth;
         }
 
